@@ -22,7 +22,7 @@ After building and installing:
 ```bash
 # Create a basic .tflint.hcl config
 cat << EOS > .tflint.hcl
-plugin "template" {
+plugin "cinder" {
   enabled = true
 }
 EOS

@@ -1,4 +1,4 @@
-module github.com/terraform-linters/tflint-ruleset-template
+module github.com/cinder-technologies/tflint-ruleset-cinder
 
 go 1.24.0
 

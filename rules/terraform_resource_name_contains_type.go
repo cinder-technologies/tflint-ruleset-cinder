@@ -56,10 +56,10 @@ func (r *TerraformResourceNameContainsTypeRule) Check(runner tflint.Runner) erro
 		resourceType := resource.Labels[0]
 		resourceName := resource.Labels[1]
 		
-		if r.nameContainsType(resourceType, resourceName) {
+		if r.hasSharedSuffix(resourceType, resourceName) {
 			err := runner.EmitIssue(
 				r,
-				fmt.Sprintf("Resource name '%s' contains parts of the resource type '%s'", resourceName, resourceType),
+				fmt.Sprintf("Resource name '%s' should not have a shared suffix with the resource type '%s'.", resourceName, resourceType),
 				resource.DefRange,
 			)
 			if err != nil {
@@ -71,25 +71,36 @@ func (r *TerraformResourceNameContainsTypeRule) Check(runner tflint.Runner) erro
 	return nil
 }
 
-// nameContainsType checks if the resource name contains any part of the resource type
-func (r *TerraformResourceNameContainsTypeRule) nameContainsType(resourceType, resourceName string) bool {
+// hasSharedSuffix checks if the resource name has a shared suffix with the resource type
+func (r *TerraformResourceNameContainsTypeRule) hasSharedSuffix(resourceType, resourceName string) bool {
 	// Convert both to lowercase for case-insensitive comparison
 	lowerType := strings.ToLower(resourceType)
 	lowerName := strings.ToLower(resourceName)
 	
-	// Split resource type by underscores to get individual components
+	// Split both by underscores to get word segments
 	typeParts := strings.Split(lowerType, "_")
+	nameParts := strings.Split(lowerName, "_")
 	
-	// Check if the full resource type appears in the name
-	if strings.Contains(lowerName, lowerType) {
-		return true
-	}
-	
-	// Check if any meaningful part of the resource type appears in the name
-	// Skip very short parts (like "s3", "ec2") and common prefixes
-	for _, part := range typeParts {
-		if len(part) > 2 && part != "aws" && part != "gcp" && part != "azurerm" {
-			if strings.Contains(lowerName, part) {
+	// Check all possible suffixes of the resource type
+	for i := 0; i < len(typeParts); i++ {
+		// Get suffix starting from position i
+		typeSuffix := typeParts[i:]
+		
+		// Check if name ends with this suffix
+		if len(nameParts) >= len(typeSuffix) {
+			nameStart := len(nameParts) - len(typeSuffix)
+			nameSuffix := nameParts[nameStart:]
+			
+			// Compare the suffixes
+			match := true
+			for j := 0; j < len(typeSuffix); j++ {
+				if typeSuffix[j] != nameSuffix[j] {
+					match = false
+					break
+				}
+			}
+			
+			if match {
 				return true
 			}
 		}

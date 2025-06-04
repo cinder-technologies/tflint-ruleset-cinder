@@ -14,25 +14,25 @@ func Test_TerraformResourceNameContainsType(t *testing.T) {
 		Expected helper.Issues
 	}{
 		{
-			Name: "aws_iam_role with full type in name",
+			Name: "aws_iam_role with shared suffix iam_role",
 			Content: `
-resource "aws_iam_role" "user_iam_role" {
+resource "aws_iam_role" "my_iam_role" {
   name = "test"
 }`,
 			Expected: helper.Issues{
 				{
 					Rule:    NewTerraformResourceNameContainsTypeRule(),
-					Message: "Resource name 'user_iam_role' contains parts of the resource type 'aws_iam_role'",
+					Message: "Resource name 'my_iam_role' should not have a shared suffix with the resource type 'aws_iam_role'.",
 					Range: hcl.Range{
 						Filename: "resource.tf",
 						Start:    hcl.Pos{Line: 2, Column: 1},
-						End:      hcl.Pos{Line: 2, Column: 40},
+						End:      hcl.Pos{Line: 2, Column: 38},
 					},
 				},
 			},
 		},
 		{
-			Name: "aws_iam_role with role in name",
+			Name: "aws_iam_role with shared suffix role",
 			Content: `
 resource "aws_iam_role" "user_role" {
   name = "test"
@@ -40,7 +40,7 @@ resource "aws_iam_role" "user_role" {
 			Expected: helper.Issues{
 				{
 					Rule:    NewTerraformResourceNameContainsTypeRule(),
-					Message: "Resource name 'user_role' contains parts of the resource type 'aws_iam_role'",
+					Message: "Resource name 'user_role' should not have a shared suffix with the resource type 'aws_iam_role'.",
 					Range: hcl.Range{
 						Filename: "resource.tf",
 						Start:    hcl.Pos{Line: 2, Column: 1},
@@ -50,7 +50,15 @@ resource "aws_iam_role" "user_role" {
 			},
 		},
 		{
-			Name: "aws_s3_bucket with bucket in name",
+			Name: "aws_iam_role with no shared suffix - allowed",
+			Content: `
+resource "aws_iam_role" "my_iam" {
+  name = "test"
+}`,
+			Expected: helper.Issues{},
+		},
+		{
+			Name: "aws_s3_bucket with shared suffix bucket",
 			Content: `
 resource "aws_s3_bucket" "my_bucket" {
   bucket = "test"
@@ -58,7 +66,7 @@ resource "aws_s3_bucket" "my_bucket" {
 			Expected: helper.Issues{
 				{
 					Rule:    NewTerraformResourceNameContainsTypeRule(),
-					Message: "Resource name 'my_bucket' contains parts of the resource type 'aws_s3_bucket'",
+					Message: "Resource name 'my_bucket' should not have a shared suffix with the resource type 'aws_s3_bucket'.",
 					Range: hcl.Range{
 						Filename: "resource.tf",
 						Start:    hcl.Pos{Line: 2, Column: 1},
@@ -68,7 +76,7 @@ resource "aws_s3_bucket" "my_bucket" {
 			},
 		},
 		{
-			Name: "aws_lambda_function with function in name",
+			Name: "aws_lambda_function with shared suffix function",
 			Content: `
 resource "aws_lambda_function" "my_function" {
   filename = "test.zip"
@@ -76,7 +84,7 @@ resource "aws_lambda_function" "my_function" {
 			Expected: helper.Issues{
 				{
 					Rule:    NewTerraformResourceNameContainsTypeRule(),
-					Message: "Resource name 'my_function' contains parts of the resource type 'aws_lambda_function'",
+					Message: "Resource name 'my_function' should not have a shared suffix with the resource type 'aws_lambda_function'.",
 					Range: hcl.Range{
 						Filename: "resource.tf",
 						Start:    hcl.Pos{Line: 2, Column: 1},
@@ -86,7 +94,7 @@ resource "aws_lambda_function" "my_function" {
 			},
 		},
 		{
-			Name: "case insensitive matching",
+			Name: "case insensitive matching - shared suffix iam_role",
 			Content: `
 resource "aws_iam_role" "user_IAM_ROLE" {
   name = "test"
@@ -94,7 +102,7 @@ resource "aws_iam_role" "user_IAM_ROLE" {
 			Expected: helper.Issues{
 				{
 					Rule:    NewTerraformResourceNameContainsTypeRule(),
-					Message: "Resource name 'user_IAM_ROLE' contains parts of the resource type 'aws_iam_role'",
+					Message: "Resource name 'user_IAM_ROLE' should not have a shared suffix with the resource type 'aws_iam_role'.",
 					Range: hcl.Range{
 						Filename: "resource.tf",
 						Start:    hcl.Pos{Line: 2, Column: 1},
@@ -107,6 +115,14 @@ resource "aws_iam_role" "user_IAM_ROLE" {
 			Name: "valid resource name without type",
 			Content: `
 resource "aws_iam_role" "user_permissions" {
+  name = "test"
+}`,
+			Expected: helper.Issues{},
+		},
+		{
+			Name: "resource name with shared suffix policy - should not trigger",
+			Content: `
+resource "aws_iam_role_policy_attachment" "cloudwatch_agent_server_policy" {
   name = "test"
 }`,
 			Expected: helper.Issues{},
@@ -136,7 +152,7 @@ resource "aws_iam_role" "aws_user" {
 			Expected: helper.Issues{},
 		},
 		{
-			Name: "ec2 instance with instance in name",
+			Name: "aws_instance with shared suffix instance",
 			Content: `
 resource "aws_instance" "web_instance" {
   ami = "ami-12345"
@@ -144,7 +160,7 @@ resource "aws_instance" "web_instance" {
 			Expected: helper.Issues{
 				{
 					Rule:    NewTerraformResourceNameContainsTypeRule(),
-					Message: "Resource name 'web_instance' contains parts of the resource type 'aws_instance'",
+					Message: "Resource name 'web_instance' should not have a shared suffix with the resource type 'aws_instance'.",
 					Range: hcl.Range{
 						Filename: "resource.tf",
 						Start:    hcl.Pos{Line: 2, Column: 1},
@@ -166,7 +182,7 @@ resource "aws_s3_bucket" "data_bucket" {
 			Expected: helper.Issues{
 				{
 					Rule:    NewTerraformResourceNameContainsTypeRule(),
-					Message: "Resource name 'data_bucket' contains parts of the resource type 'aws_s3_bucket'",
+					Message: "Resource name 'data_bucket' should not have a shared suffix with the resource type 'aws_s3_bucket'.",
 					Range: hcl.Range{
 						Filename: "resource.tf",
 						Start:    hcl.Pos{Line: 6, Column: 1},
@@ -174,6 +190,82 @@ resource "aws_s3_bucket" "data_bucket" {
 					},
 				},
 			},
+		},
+		{
+			Name: "type part in middle of name should be allowed",
+			Content: `
+resource "aws_iam_role" "role_for_lambda" {
+  name = "test"
+}`,
+			Expected: helper.Issues{},
+		},
+		{
+			Name: "type part in middle of name should be allowed - bucket",
+			Content: `
+resource "aws_s3_bucket" "bucket_for_data" {
+  bucket = "test"
+}`,
+			Expected: helper.Issues{},
+		},
+		{
+			Name: "resource name with shared suffix policy - should not trigger",
+			Content: `
+resource "aws_iam_role_policy_attachment" "amazon_eks_cluster_policy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+}`,
+			Expected: helper.Issues{},
+		},
+		{
+			Name: "resource name with shared suffix attachment - should trigger",
+			Content: `
+resource "aws_iam_role_policy_attachment" "amazon_eks_cluster_policy_attachment" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+}`,
+			Expected: helper.Issues{
+				{
+					Rule:    NewTerraformResourceNameContainsTypeRule(),
+					Message: "Resource name 'amazon_eks_cluster_policy_attachment' should not have a shared suffix with the resource type 'aws_iam_role_policy_attachment'.",
+					Range: hcl.Range{
+						Filename: "resource.tf",
+						Start:    hcl.Pos{Line: 2, Column: 1},
+						End:      hcl.Pos{Line: 2, Column: 81},
+					},
+				},
+			},
+		},
+		{
+			Name: "resource name with no shared suffix - allowed",
+			Content: `
+resource "aws_iam_role_policy_attachment" "eks_cluster" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+}`,
+			Expected: helper.Issues{},
+		},
+		{
+			Name: "aws_security_group with shared suffix group",
+			Content: `
+resource "aws_security_group" "web_security_group" {
+  name = "web-sg"
+}`,
+			Expected: helper.Issues{
+				{
+					Rule:    NewTerraformResourceNameContainsTypeRule(),
+					Message: "Resource name 'web_security_group' should not have a shared suffix with the resource type 'aws_security_group'.",
+					Range: hcl.Range{
+						Filename: "resource.tf",
+						Start:    hcl.Pos{Line: 2, Column: 1},
+						End:      hcl.Pos{Line: 2, Column: 51},
+					},
+				},
+			},
+		},
+		{
+			Name: "nonshared suffix like s3 in name is allowed",
+			Content: `
+resource "aws_s3_bucket" "logs_s3" {
+  bucket = "my-logs"
+}`,
+			Expected: helper.Issues{},
 		},
 	}
 
